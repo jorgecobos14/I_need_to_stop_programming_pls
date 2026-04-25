@@ -1,0 +1,7 @@
+Acho Chat App is a lightweight Android client that provides access to the Acho chat platform through a native WebView interface.
+
+The application is intentionally minimal and focuses on a simple, direct, and transparent user experience.
+
+Features include in-app navigation, WebView-based loading of the remote chat platform, and support for standard web compatibility features such as JavaScript and DOM storage.
+
+The app does not collect personal data on its own. All chat content and network activity happen through the remote Acho web service.
