@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
 
         webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl("https://TU_URL_AQUI");
+        webView.loadUrl("https://bloom-mapping-challenged-coastal.trycloudflare.com");
     }
 
     @Override
