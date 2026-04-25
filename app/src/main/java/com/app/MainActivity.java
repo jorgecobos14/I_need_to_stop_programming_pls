@@ -1,7 +1,8 @@
-package com.app;
+package com.acho.chat.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -9,6 +10,7 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private static final String HOME_URL = "https://bloom-mapping-challenged-coastal.trycloudflare.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,9 +24,13 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setSupportMultipleWindows(false);
 
         webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl("https://bloom-mapping-challenged-coastal.trycloudflare.com");
+        webView.setWebChromeClient(new WebChromeClient());
+
+        webView.loadUrl(HOME_URL);
     }
 
     @Override
