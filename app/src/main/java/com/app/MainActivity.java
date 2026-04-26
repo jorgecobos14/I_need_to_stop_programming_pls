@@ -10,7 +10,7 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
-    private static final String HOME_URL = "https://bloom-mapping-challenged-coastal.trycloudflare.com";
+    private static final String HOME_URL = "https://sought-apart-adjustable-depend.trycloudflare.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
