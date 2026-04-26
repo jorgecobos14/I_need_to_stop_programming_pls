@@ -1,8 +1,11 @@
 package com.acho.chat.app;
 
 import android.app.Activity;
+import android.net.http.SslError;
 import android.os.Bundle;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -10,7 +13,8 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
-    private static final String HOME_URL = "https://buys-suggested-motion-healthy.trycloudflare.com";
+    private static final String HOME_URL = "https://dispatch-commitment-bedrooms-chem.trycloudflare.com";
+    private static final String ALLOWED_HOST = "buys-suggested-motion-healthy.trycloudflare.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,14 +24,47 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
+
+        // ✅ JavaScript necesario para tu app
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(true);
-        settings.setSupportMultipleWindows(false);
 
-        webView.setWebViewClient(new WebViewClient());
+        // 🔒 Deshabilitar funciones innecesarias y riesgosas
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setSupportMultipleWindows(false);
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setGeolocationEnabled(false);
+        settings.setSaveFormData(false);
+        settings.setSavePassword(false);
+
+        // 🔒 Forzar HTTPS
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+
+        webView.setWebViewClient(new WebViewClient() {
+
+            // 🔒 Solo permite cargar tu dominio
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String host = request.getUrl().getHost();
+                if (host != null && host.equals(ALLOWED_HOST)) {
+                    return false; // Permitir
+                }
+                return true; // Bloquear cualquier otro dominio
+            }
+
+            // 🔒 Manejo estricto de errores SSL
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                // NUNCA usar handler.proceed() — cancela en caso de error SSL
+                handler.cancel();
+            }
+        });
+
         webView.setWebChromeClient(new WebChromeClient());
 
         webView.loadUrl(HOME_URL);
@@ -40,5 +77,15 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (webView != null) {
+            webView.stopLoading();
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
     }
 }
