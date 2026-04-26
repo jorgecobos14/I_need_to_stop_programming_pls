@@ -1,0 +1,21 @@
+Categories:
+  - Internet
+License: MIT
+SourceCode: https://github.com/jorgecobos14/I_need_to_stop_programming_pls
+IssueTracker: https://github.com/jorgecobos14/I_need_to_stop_programming_pls/issues
+
+AutoName: Acho Chat
+
+RepoType: git
+Repo: https://github.com/jorgecobos14/I_need_to_stop_programming_pls
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: main
+    subdir: .
+    gradle:
+      - debug
+
+AutoUpdateMode: None
+UpdateCheckMode: None
