@@ -13,8 +13,8 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
-    private static final String HOME_URL = "https://dispatch-commitment-bedrooms-chem.trycloudflare.com";
-    private static final String ALLOWED_HOST = "buys-suggested-motion-healthy.trycloudflare.com";
+    private static final String HOME_URL = "https://exposure-cups-exposed-fashion.trycloudflare.com";
+    private static final String ALLOWED_HOST = "exposure-cups-exposed-fashion.trycloudflare.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
