@@ -1,139 +1,29 @@
-package com.acho.chat.app;
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.pm.PackageManager;
-import android.net.http.SslError;
-import android.os.Bundle;
-import android.webkit.PermissionRequest;
-import android.webkit.SslErrorHandler;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+    <!-- Permisos -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
-public class MainActivity extends Activity {
+    <application
+        android:label="Acho"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false"
+        android:hardwareAccelerated="true"
+        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
 
-    private WebView webView;
-    private static final String HOME_URL = "https://exposure-cups-exposed-fashion.trycloudflare.com";
-    private static final String ALLOWED_HOST = "exposure-cups-exposed-fashion.trycloudflare.com";
-    private static final int REQ_MICROPHONE = 1001;
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
 
-    private PermissionRequest pendingPermissionRequest;
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        </activity>
 
-        webView = new WebView(this);
-        setContentView(webView);
+    </application>
 
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-
-        webView.setWebViewClient(new WebViewClient() {
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String host = request.getUrl().getHost();
-                return host == null || !host.equals(ALLOWED_HOST);
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return url == null || !url.contains(ALLOWED_HOST);
-            }
-
-            @Override
-            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                handler.cancel();
-            }
-        });
-
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(() -> {
-
-                    boolean wantsAudio = false;
-                    for (String res : request.getResources()) {
-                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
-                            wantsAudio = true;
-                            break;
-                        }
-                    }
-
-                    if (!wantsAudio) {
-                        request.deny();
-                        return;
-                    }
-
-                    if (hasMicPermission()) {
-                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                    } else {
-                        pendingPermissionRequest = request;
-                        requestPermissions(
-                                new String[]{Manifest.permission.RECORD_AUDIO},
-                                REQ_MICROPHONE
-                        );
-                    }
-                });
-            }
-        });
-
-        if (!hasMicPermission()) {
-            requestPermissions(
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    REQ_MICROPHONE
-            );
-        }
-
-        webView.loadUrl(HOME_URL);
-    }
-
-    private boolean hasMicPermission() {
-        return checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQ_MICROPHONE) {
-            boolean granted = grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED;
-
-            if (pendingPermissionRequest != null) {
-                if (granted) {
-                    pendingPermissionRequest.grant(
-                            new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}
-                    );
-                } else {
-                    pendingPermissionRequest.deny();
-                }
-                pendingPermissionRequest = null;
-            }
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (webView != null) {
-            webView.destroy();
-            webView = null;
-        }
-        super.onDestroy();
-    }
-}
+</manifest>
