@@ -13,7 +13,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-
 public class MainActivity extends Activity {
 
     private WebView webView;
@@ -68,6 +67,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
+
                     boolean wantsAudio = false;
                     for (String res : request.getResources()) {
                         if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
@@ -85,8 +85,7 @@ public class MainActivity extends Activity {
                         request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                     } else {
                         pendingPermissionRequest = request;
-                        ActivityCompat.requestPermissions(
-                                MainActivity.this,
+                        requestPermissions(
                                 new String[]{Manifest.permission.RECORD_AUDIO},
                                 REQ_MICROPHONE
                         );
@@ -96,8 +95,7 @@ public class MainActivity extends Activity {
         });
 
         if (!hasMicPermission()) {
-            ActivityCompat.requestPermissions(
-                    this,
+            requestPermissions(
                     new String[]{Manifest.permission.RECORD_AUDIO},
                     REQ_MICROPHONE
             );
@@ -107,17 +105,15 @@ public class MainActivity extends Activity {
     }
 
     private boolean hasMicPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+        return checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (requestCode == REQ_MICROPHONE) {
-            boolean granted = grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            boolean granted = grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
             if (pendingPermissionRequest != null) {
                 if (granted) {
