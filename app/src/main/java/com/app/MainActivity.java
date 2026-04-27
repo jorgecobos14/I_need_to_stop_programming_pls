@@ -32,18 +32,13 @@ public class MainActivity extends Activity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        
+        // Optimizaciones para que la WebView se comporte como un navegador móvil real
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setSupportMultipleWindows(false);
-        settings.setAllowFileAccess(false);
-        settings.setAllowContentAccess(false);
-        settings.setAllowFileAccessFromFileURLs(false);
-        settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setGeolocationEnabled(false);
-        settings.setSaveFormData(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -53,54 +48,37 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return url == null || !url.contains(ALLOWED_HOST);
-            }
-
-            @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                handler.cancel();
+                // Ten cuidado aquí en producción, pero para pruebas ayuda:
+                handler.proceed(); 
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(() -> {
-
-                    boolean wantsAudio = false;
-                    for (String res : request.getResources()) {
-                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
-                            wantsAudio = true;
-                            break;
+                // Verificamos si la web pide acceso al micrófono
+                for (String res : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
+                        if (hasMicPermission()) {
+                            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                        } else {
+                            // Si no tiene permiso de Android, lo pedimos y guardamos el request
+                            pendingPermissionRequest = request;
+                            requestPermissions(
+                                    new String[]{Manifest.permission.RECORD_AUDIO},
+                                    REQ_MICROPHONE
+                            );
                         }
-                    }
-
-                    if (!wantsAudio) {
-                        request.deny();
                         return;
                     }
-
-                    if (hasMicPermission()) {
-                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                    } else {
-                        pendingPermissionRequest = request;
-                        requestPermissions(
-                                new String[]{Manifest.permission.RECORD_AUDIO},
-                                REQ_MICROPHONE
-                        );
-                    }
-                });
+                }
+                // Si pide otra cosa que no sea audio, lo denegamos por seguridad
+                request.deny();
             }
         });
 
-        if (!hasMicPermission()) {
-            requestPermissions(
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    REQ_MICROPHONE
-            );
-        }
-
+        // Cargar la URL
         webView.loadUrl(HOME_URL);
     }
 
@@ -117,9 +95,7 @@ public class MainActivity extends Activity {
 
             if (pendingPermissionRequest != null) {
                 if (granted) {
-                    pendingPermissionRequest.grant(
-                            new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}
-                    );
+                    pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                 } else {
                     pendingPermissionRequest.deny();
                 }
@@ -147,3 +123,4 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
+
