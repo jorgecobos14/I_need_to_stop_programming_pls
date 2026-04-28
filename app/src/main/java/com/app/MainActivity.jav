@@ -34,7 +34,9 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+
         // Optimizaciones para que la WebView se comporte como un navegador móvil real
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
@@ -49,32 +51,30 @@ public class MainActivity extends Activity {
 
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                // Ten cuidado aquí en producción, pero para pruebas ayuda:
-                handler.proceed(); 
+                handler.proceed();
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                // Verificamos si la web pide acceso al micrófono
-                for (String res : request.getResources()) {
-                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
-                        if (hasMicPermission()) {
-                            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                        } else {
-                            // Si no tiene permiso de Android, lo pedimos y guardamos el request
-                            pendingPermissionRequest = request;
-                            requestPermissions(
-                                    new String[]{Manifest.permission.RECORD_AUDIO},
-                                    REQ_MICROPHONE
-                            );
+                runOnUiThread(() -> {
+                    for (String res : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
+                            if (hasMicPermission()) {
+                                request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                            } else {
+                                pendingPermissionRequest = request;
+                                requestPermissions(
+                                        new String[]{Manifest.permission.RECORD_AUDIO},
+                                        REQ_MICROPHONE
+                                );
+                            }
+                            return;
                         }
-                        return;
                     }
-                }
-                // Si pide otra cosa que no sea audio, lo denegamos por seguridad
-                request.deny();
+                    request.deny();
+                });
             }
         });
 
@@ -94,12 +94,15 @@ public class MainActivity extends Activity {
                     grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
             if (pendingPermissionRequest != null) {
-                if (granted) {
-                    pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                } else {
-                    pendingPermissionRequest.deny();
-                }
+                final PermissionRequest req = pendingPermissionRequest;
                 pendingPermissionRequest = null;
+                runOnUiThread(() -> {
+                    if (granted) {
+                        req.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                    } else {
+                        req.deny();
+                    }
+                });
             }
         }
     }
