@@ -16,7 +16,7 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
-    private static final String HOME_URL = "https://interesting-automation-highways-nirvana.trycloudflare.co";
+    private static final String HOME_URL = "https://interesting-automation-highways-nirvana.trycloudflare.com";
     private static final String ALLOWED_HOST = "interesting-automation-highways-nirvana.trycloudflare.com";
     private static final int REQ_MICROPHONE = 1001;
 
