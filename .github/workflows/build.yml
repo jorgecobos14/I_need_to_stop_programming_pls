@@ -24,9 +24,9 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # 🔥 BUILD APK (release)
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
+      # 🔥 BUILD APK (debug)
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
       # 📦 BUILD AAB (release)
       - name: Build Release AAB
@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/debug/*.apk
 
       # 📤 Upload AAB
       - name: Upload AAB
