@@ -24,38 +24,31 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # 🔥 BUILD APK (release)
+      # 🔥 BUILD APK (release) con firma
       - name: Build Release APK
-        run: ./gradlew assembleRelease
-
-      # 📦 BUILD AAB (release)
-      - name: Build Release AAB
-        run: ./gradlew bundleRelease
-
-      # ✍️ Sign APK manually
-      - name: Sign APK
         run: |
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > keystore.jks
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/keystore.jks \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEY_STORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
-          # Firmar
-          jarsigner -verbose \
-            -keystore keystore.jks \
-            -storepass "${{ secrets.KEY_STORE_PASSWORD }}" \
-            -keypass "${{ secrets.KEY_PASSWORD }}" \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
-            "${{ secrets.ALIAS }}"
-
-          # Zipalign (requerido por Android)
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/zipalign -v 4 \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
-            app/build/outputs/apk/release/app-release-signed.apk
+      # 📦 BUILD AAB (release) con firma
+      - name: Build Release AAB
+        run: |
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/keystore.jks \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEY_STORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
       # 📤 Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: app/build/outputs/apk/release/app-release-signed.apk
+          path: app/build/outputs/apk/release/*.apk
 
       # 📤 Upload AAB
       - name: Upload AAB
