@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.PermissionRequest;
@@ -25,7 +26,9 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://refers-advocacy-yards-beginner.trycloudflare.com";
     private static final String ALLOWED_HOST = "refers-advocacy-yards-beginner.trycloudflare.com";
+
     private static final int REQ_MICROPHONE = 1001;
+    private static final int REQ_STORAGE    = 1002;
 
     private PermissionRequest pendingPermissionRequest;
 
@@ -50,7 +53,7 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
 
-        // Caché agresiva
+        // Caché
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setAppCacheEnabled(true);
         settings.setAppCachePath(getCacheDir().getAbsolutePath());
@@ -67,6 +70,9 @@ public class MainActivity extends Activity {
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
+        // Solicitar permisos de almacenamiento al iniciar
+        requestStoragePermissions();
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -81,7 +87,6 @@ public class MainActivity extends Activity {
 
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                // Solo proceder si es nuestro host de confianza
                 if (error.getUrl().contains(ALLOWED_HOST)) {
                     handler.proceed();
                 } else {
@@ -141,6 +146,35 @@ public class MainActivity extends Activity {
         webView.loadUrl(HOME_URL);
     }
 
+    // ── Permisos de almacenamiento ──────────────────────────────
+    private void requestStoragePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ (API 33)
+            String[] perms = {
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO
+            };
+            boolean needsRequest = false;
+            for (String p : perms) {
+                if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
+                    needsRequest = true;
+                    break;
+                }
+            }
+            if (needsRequest) requestPermissions(perms, REQ_STORAGE);
+        } else {
+            // Android 12 y menor (API 21-32)
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQ_STORAGE
+                );
+            }
+        }
+    }
+
     private boolean hasMicPermission() {
         return checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED;
@@ -163,12 +197,13 @@ public class MainActivity extends Activity {
                 });
             }
         }
+        // REQ_STORAGE: no necesita acción adicional,
+        // el selector de archivos del WebView lo maneja automáticamente
     }
 
     @Override
     public void onBackPressed() {
         if (customView != null) {
-            // Salir de fullscreen primero
             webView.setVisibility(View.VISIBLE);
             fullscreenContainer.removeView(customView);
             customView = null;
@@ -199,10 +234,11 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         if (webView != null) {
             webView.stopLoading();
-            webView.clearCache(false); // false = no borrar caché al cerrar
+            webView.clearCache(false);
             webView.destroy();
             webView = null;
         }
         super.onDestroy();
     }
 }
+
