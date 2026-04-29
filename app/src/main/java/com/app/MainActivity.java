@@ -48,29 +48,24 @@ public class MainActivity extends Activity {
 
         WebSettings settings = webView.getSettings();
 
-        // JavaScript y almacenamiento
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
 
-        // Caché
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setAppCacheEnabled(true);
         settings.setAppCachePath(getCacheDir().getAbsolutePath());
 
-        // Video y multimedia
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
-        // Rendimiento
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         settings.setEnableSmoothTransition(true);
 
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
-        // Solicitar permisos de almacenamiento al iniciar
         requestStoragePermissions();
 
         webView.setWebViewClient(new WebViewClient() {
@@ -97,7 +92,6 @@ public class MainActivity extends Activity {
 
         webView.setWebChromeClient(new WebChromeClient() {
 
-            // Soporte fullscreen para videos
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (customView != null) {
@@ -146,10 +140,8 @@ public class MainActivity extends Activity {
         webView.loadUrl(HOME_URL);
     }
 
-    // ── Permisos de almacenamiento ──────────────────────────────
     private void requestStoragePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ (API 33)
             String[] perms = {
                 Manifest.permission.READ_MEDIA_IMAGES,
                 Manifest.permission.READ_MEDIA_VIDEO,
@@ -164,7 +156,6 @@ public class MainActivity extends Activity {
             }
             if (needsRequest) requestPermissions(perms, REQ_STORAGE);
         } else {
-            // Android 12 y menor (API 21-32)
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
@@ -197,8 +188,6 @@ public class MainActivity extends Activity {
                 });
             }
         }
-        // REQ_STORAGE: no necesita acción adicional,
-        // el selector de archivos del WebView lo maneja automáticamente
     }
 
     @Override
@@ -241,4 +230,3 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
-
