@@ -2,14 +2,17 @@ package com.acho.chat.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -23,6 +26,9 @@ public class MainActivity extends Activity {
     private FrameLayout fullscreenContainer;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
+
+    private ValueCallback<Uri[]> filePathCallback;
+    private static final int REQ_FILE_CHOOSER = 1003;
 
     private static final String HOME_URL = "https://refers-advocacy-yards-beginner.trycloudflare.com";
     private static final String ALLOWED_HOST = "refers-advocacy-yards-beginner.trycloudflare.com";
@@ -91,6 +97,23 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient() {
 
             @Override
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams) {
+                if (MainActivity.this.filePathCallback != null) {
+                    MainActivity.this.filePathCallback.onReceiveValue(null);
+                }
+                MainActivity.this.filePathCallback = filePathCallback;
+                Intent intent = fileChooserParams.createIntent();
+                try {
+                    startActivityForResult(intent, REQ_FILE_CHOOSER);
+                } catch (Exception e) {
+                    MainActivity.this.filePathCallback = null;
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (customView != null) {
                     callback.onCustomViewHidden();
@@ -136,6 +159,20 @@ public class MainActivity extends Activity {
         });
 
         webView.loadUrl(HOME_URL);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQ_FILE_CHOOSER) {
+            if (filePathCallback != null) {
+                Uri[] results = null;
+                if (resultCode == Activity.RESULT_OK && data != null) {
+                    results = new Uri[]{data.getData()};
+                }
+                filePathCallback.onReceiveValue(results);
+                filePathCallback = null;
+            }
+        }
     }
 
     private void requestStoragePermissions() {
@@ -228,3 +265,4 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
+
