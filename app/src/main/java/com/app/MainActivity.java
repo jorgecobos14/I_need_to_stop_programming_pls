@@ -53,8 +53,6 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
 
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setAppCacheEnabled(true);
-        settings.setAppCachePath(getCacheDir().getAbsolutePath());
 
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
