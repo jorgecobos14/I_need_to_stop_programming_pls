@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
@@ -20,6 +22,14 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class MainActivity extends Activity {
 
     private WebView webView;
@@ -28,7 +38,9 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback customViewCallback;
 
     private ValueCallback<Uri[]> filePathCallback;
+    private Uri cameraImageUri;
     private static final int REQ_FILE_CHOOSER = 1003;
+    private static final int REQ_CAMERA       = 1004;
 
     private static final String HOME_URL = "https://refers-advocacy-yards-beginner.trycloudflare.com";
     private static final String ALLOWED_HOST = "refers-advocacy-yards-beginner.trycloudflare.com";
@@ -70,8 +82,6 @@ public class MainActivity extends Activity {
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
-        requestStoragePermissions();
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -103,9 +113,42 @@ public class MainActivity extends Activity {
                     MainActivity.this.filePathCallback.onReceiveValue(null);
                 }
                 MainActivity.this.filePathCallback = filePathCallback;
-                Intent intent = fileChooserParams.createIntent();
+
+                // Pedir permisos en contexto si aún no están concedidos
+                requestStoragePermissions();
+
+                // Intent para galería / archivos
+                Intent galleryIntent = fileChooserParams.createIntent();
+
+                // Intent para cámara
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                File photoFile = null;
                 try {
-                    startActivityForResult(intent, REQ_FILE_CHOOSER);
+                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                    File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+                    photoFile = File.createTempFile("IMG_" + timeStamp, ".jpg", storageDir);
+                } catch (IOException e) {
+                    photoFile = null;
+                }
+                if (photoFile != null) {
+                    cameraImageUri = FileProvider.getUriForFile(
+                            MainActivity.this,
+                            getPackageName() + ".provider",
+                            photoFile
+                    );
+                    cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+                } else {
+                    cameraImageUri = null;
+                }
+
+                // Selector combinado: cámara + galería
+                Intent chooser = Intent.createChooser(galleryIntent, "Seleccionar archivo");
+                if (cameraImageUri != null) {
+                    chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
+                }
+
+                try {
+                    startActivityForResult(chooser, REQ_FILE_CHOOSER);
                 } catch (Exception e) {
                     MainActivity.this.filePathCallback = null;
                     return false;
@@ -166,11 +209,18 @@ public class MainActivity extends Activity {
         if (requestCode == REQ_FILE_CHOOSER) {
             if (filePathCallback != null) {
                 Uri[] results = null;
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    results = new Uri[]{data.getData()};
+                if (resultCode == Activity.RESULT_OK) {
+                    if (data != null && data.getData() != null) {
+                        // Archivo de galería seleccionado
+                        results = new Uri[]{data.getData()};
+                    } else if (cameraImageUri != null) {
+                        // Foto tomada con cámara
+                        results = new Uri[]{cameraImageUri};
+                    }
                 }
                 filePathCallback.onReceiveValue(results);
                 filePathCallback = null;
+                cameraImageUri = null;
             }
         }
     }
@@ -180,7 +230,8 @@ public class MainActivity extends Activity {
             String[] perms = {
                 Manifest.permission.READ_MEDIA_IMAGES,
                 Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_AUDIO
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.CAMERA
             };
             boolean needsRequest = false;
             for (String p : perms) {
@@ -192,9 +243,14 @@ public class MainActivity extends Activity {
             if (needsRequest) requestPermissions(perms, REQ_STORAGE);
         } else {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.CAMERA)
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.CAMERA
+                    },
                     REQ_STORAGE
                 );
             }
