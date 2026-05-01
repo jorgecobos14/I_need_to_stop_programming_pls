@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
     private static final int REQ_FILE_CHOOSER = 1003;
 
-    private static final String HOME_URL = "https://359b91a457a017.lhr.life/community";
+    private static final String HOME_URL = "https://359b91a457a017.lhr.life";
     private static final String ALLOWED_HOST = "359b91a457a017.lhr.life";
 
     private static final int REQ_MICROPHONE = 1001;
