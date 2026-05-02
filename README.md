@@ -14,7 +14,7 @@ It prioritizes simplicity, performance, and transparency, avoiding unnecessary f
 - Provides in-app back navigation
 - Enables JavaScript and DOM storage for web compatibility
 - Uses a lightweight native Android interface
-- Keeps the app focused on a single purpose
+- Supports sharing photos, videos, and files with the community and chat
 
 ## Privacy
 
@@ -24,7 +24,14 @@ All chat content, network requests, and account interactions occur directly thro
 
 ## Permissions
 
-The app requires internet access in order to load the remote web platform.
+- `INTERNET` — required to load the web platform
+- `READ_EXTERNAL_STORAGE` — allows the user to select files from their device to share in the community or chat (Android 7.1.2 - 12)
+- `WRITE_EXTERNAL_STORAGE` — allows saving files downloaded from the platform (Android 7.1.2 - 9)
+- `READ_MEDIA_IMAGES` — allows selecting images from the device to share (Android 13+)
+- `READ_MEDIA_VIDEO` — allows selecting videos from the device to share (Android 13+)
+- `READ_MEDIA_AUDIO` — allows selecting audio files from the device to share (Android 13+)
+
+Uploaded files are managed by the platform administrator. Any file may be removed if it violates the usage policies, provided the administrator gives a justification and the content creator confirms the removal.
 
 ## Technical details
 
@@ -45,3 +52,4 @@ This repository contains the full source code for the application.
 ## License
 
 See the `LICENSE` file for licensing information.
+
