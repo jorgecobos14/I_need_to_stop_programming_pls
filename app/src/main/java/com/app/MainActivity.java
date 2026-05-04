@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
@@ -21,81 +20,58 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 public class MainActivity extends Activity {
-
     private WebView webView;
     private FrameLayout fullscreenContainer;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
-
     private ValueCallback<Uri[]> filePathCallback;
-    private static final int REQ_FILE_CHOOSER = 1003;
-
     private static final String HOME_URL = "https://san-league-beautifully-apps.trycloudflare.com";
     private static final String ALLOWED_HOST = "san-league-beautifully-apps.trycloudflare.com";
-
-    private static final int REQ_MICROPHONE = 1001;
-    private static final int REQ_STORAGE    = 1002;
-
-    private PermissionRequest pendingPermissionRequest;
+    private static final int REQ_STORAGE = 1002;
+    private static final int REQ_FILE_CHOOSER = 1003;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         fullscreenContainer = new FrameLayout(this);
         fullscreenContainer.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
-
         webView = new WebView(this);
         fullscreenContainer.addView(webView);
         setContentView(fullscreenContainer);
+        requestStoragePermissions();
+        setupWebView();
+        webView.loadUrl(HOME_URL);
+    }
 
+    private void setupWebView() {
         WebSettings settings = webView.getSettings();
-
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
-
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         settings.setEnableSmoothTransition(true);
-
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-
-        requestStoragePermissions();
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String host = request.getUrl().getHost();
                 return host == null || !host.equals(ALLOWED_HOST);
             }
-
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-            }
-
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                if (error.getUrl().contains(ALLOWED_HOST)) {
-                    handler.proceed();
-                } else {
-                    handler.cancel();
-                }
+                if (error.getUrl().contains(ALLOWED_HOST)) handler.proceed();
+                else handler.cancel();
             }
         });
-
         webView.setWebChromeClient(new WebChromeClient() {
-
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
                     FileChooserParams fileChooserParams) {
@@ -112,66 +88,37 @@ public class MainActivity extends Activity {
                 }
                 return true;
             }
-
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
-                if (customView != null) {
-                    callback.onCustomViewHidden();
-                    return;
-                }
+                if (customView != null) { callback.onCustomViewHidden(); return; }
                 customView = view;
                 customViewCallback = callback;
                 fullscreenContainer.addView(customView);
                 webView.setVisibility(View.GONE);
             }
-
             @Override
             public void onHideCustomView() {
-                if (customView != null) {
-                    fullscreenContainer.removeView(customView);
-                    customView = null;
-                    customViewCallback.onCustomViewHidden();
-                    customViewCallback = null;
-                    webView.setVisibility(View.VISIBLE);
-                }
+                if (customView == null) return;
+                fullscreenContainer.removeView(customView);
+                customView = null;
+                customViewCallback.onCustomViewHidden();
+                customViewCallback = null;
+                webView.setVisibility(View.VISIBLE);
             }
-
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(() -> {
-                    for (String res : request.getResources()) {
-                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(res)) {
-                            if (hasMicPermission()) {
-                                request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                            } else {
-                                pendingPermissionRequest = request;
-                                requestPermissions(
-                                        new String[]{Manifest.permission.RECORD_AUDIO},
-                                        REQ_MICROPHONE
-                                );
-                            }
-                            return;
-                        }
-                    }
-                    request.deny();
-                });
+                request.deny();
             }
         });
-
-        webView.loadUrl(HOME_URL);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQ_FILE_CHOOSER) {
-            if (filePathCallback != null) {
-                Uri[] results = null;
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    results = new Uri[]{data.getData()};
-                }
-                filePathCallback.onReceiveValue(results);
-                filePathCallback = null;
-            }
+        if (requestCode == REQ_FILE_CHOOSER && filePathCallback != null) {
+            Uri[] results = (resultCode == Activity.RESULT_OK && data != null)
+                    ? new Uri[]{data.getData()} : null;
+            filePathCallback.onReceiveValue(results);
+            filePathCallback = null;
         }
     }
 
@@ -193,34 +140,7 @@ public class MainActivity extends Activity {
         } else {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                     != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    REQ_STORAGE
-                );
-            }
-        }
-    }
-
-    private boolean hasMicPermission() {
-        return checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQ_MICROPHONE) {
-            boolean granted = grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            if (pendingPermissionRequest != null) {
-                final PermissionRequest req = pendingPermissionRequest;
-                pendingPermissionRequest = null;
-                runOnUiThread(() -> {
-                    if (granted) {
-                        req.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                    } else {
-                        req.deny();
-                    }
-                });
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQ_STORAGE);
             }
         }
     }
@@ -228,13 +148,10 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (customView != null) {
-            webView.setVisibility(View.VISIBLE);
             fullscreenContainer.removeView(customView);
             customView = null;
-            if (customViewCallback != null) {
-                customViewCallback.onCustomViewHidden();
-                customViewCallback = null;
-            }
+            if (customViewCallback != null) { customViewCallback.onCustomViewHidden(); customViewCallback = null; }
+            webView.setVisibility(View.VISIBLE);
         } else if (webView != null && webView.canGoBack()) {
             webView.goBack();
         } else {
@@ -243,16 +160,10 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        if (webView != null) webView.onPause();
-    }
+    protected void onPause() { super.onPause(); if (webView != null) webView.onPause(); }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (webView != null) webView.onResume();
-    }
+    protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 
     @Override
     protected void onDestroy() {
@@ -265,4 +176,3 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
-
