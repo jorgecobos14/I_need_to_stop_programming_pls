@@ -5,6 +5,10 @@ SourceCode: https://github.com/jorgecobos14/I_need_to_stop_programming_pls
 IssueTracker: https://github.com/jorgecobos14/I_need_to_stop_programming_pls/issues
 
 AutoName: Acho Chat
+Summary: Cliente WebView para Acho, red social privada
+Description: |-
+  Acho es una aplicación de chat y comunidad self-hosted.
+  Esta APK es un cliente WebView que conecta al servidor de Acho.
 
 RepoType: git
 Repo: https://github.com/jorgecobos14/I_need_to_stop_programming_pls
@@ -12,10 +16,9 @@ Repo: https://github.com/jorgecobos14/I_need_to_stop_programming_pls
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: main
-    subdir: .
+    commit: v1.0
     gradle:
-      - debug
+      - yes
 
 AutoUpdateMode: None
 UpdateCheckMode: None
