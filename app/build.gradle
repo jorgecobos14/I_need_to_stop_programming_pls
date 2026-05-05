@@ -31,28 +31,12 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
-        incremental = true
     }
 
+    // 👇 IMPORTANTE: desactivar splits
     splits {
         abi {
-            enable true
-            reset()
-            include 'arm64-v8a', 'armeabi-v7a'
-            universalApk true
-        }
-    }
-
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            def abi = output.getFilter(com.android.build.OutputFile.ABI)
-            if (abi == "arm64-v8a") {
-                outputFileName = "acho-64-bits.apk"
-            } else if (abi == "armeabi-v7a") {
-                outputFileName = "acho-32-bits.apk"
-            } else {
-                outputFileName = "acho-64-bits-32-bits.apk"
-            }
+            enable false
         }
     }
 
@@ -64,4 +48,5 @@ android {
 }
 
 dependencies {
+    // vacío porque tu app es básicamente un WebView glorificado
 }
