@@ -76,7 +76,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Bridge JavaScript -> Android
     public class AchoBridge {
 
         @JavascriptInterface
@@ -126,12 +125,7 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-
-        // Caché agresivo para internet inestable
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-        settings.setAppCacheEnabled(true);
-        settings.setOffscreenPreRaster(true);
-
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
@@ -139,7 +133,6 @@ public class MainActivity extends Activity {
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
-        // Registrar bridge JS
         webView.addJavascriptInterface(new AchoBridge(), "AchoApp");
 
         webView.setWebViewClient(new WebViewClient() {
