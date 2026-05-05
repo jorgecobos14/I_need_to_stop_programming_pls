@@ -2,6 +2,10 @@ package com.acho.chat.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -9,6 +13,7 @@ import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
@@ -29,6 +34,9 @@ public class MainActivity extends Activity {
     private static final String ALLOWED_HOST = "san-league-beautifully-apps.trycloudflare.com";
     private static final int REQ_STORAGE = 1002;
     private static final int REQ_FILE_CHOOSER = 1003;
+    private static final int REQ_NOTIFICATION = 1004;
+    private static final String CHANNEL_ID = "acho_notifications";
+    private int notificationId = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +49,76 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         fullscreenContainer.addView(webView);
         setContentView(fullscreenContainer);
+        createNotificationChannel();
         requestStoragePermissions();
+        requestNotificationPermission();
         setupWebView();
         webView.loadUrl(HOME_URL);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID, "Acho", NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.setDescription("Notificaciones de Acho Chat");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATION);
+            }
+        }
+    }
+
+    // Bridge JavaScript -> Android
+    public class AchoBridge {
+
+        @JavascriptInterface
+        public void showNotification(String title, String body) {
+            Intent intent = new Intent(MainActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                MainActivity.this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            Notification.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                builder = new Notification.Builder(MainActivity.this, CHANNEL_ID);
+            } else {
+                builder = new Notification.Builder(MainActivity.this);
+            }
+            builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+                   .setContentTitle(title)
+                   .setContentText(body)
+                   .setAutoCancel(true)
+                   .setContentIntent(pendingIntent);
+            NotificationManager manager = (NotificationManager)
+                getSystemService(NOTIFICATION_SERVICE);
+            if (manager != null) manager.notify(notificationId++, builder.build());
+        }
+
+        @JavascriptInterface
+        public void shareContent(String text) {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, text);
+            startActivity(Intent.createChooser(shareIntent, "Compartir via"));
+        }
+
+        @JavascriptInterface
+        public void shareUrl(String url, String title) {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, url);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+            startActivity(Intent.createChooser(shareIntent, "Compartir via"));
+        }
     }
 
     private void setupWebView() {
@@ -51,14 +126,22 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+        // Caché agresivo para internet inestable
+        settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        settings.setAppCacheEnabled(true);
+        settings.setOffscreenPreRaster(true);
+
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        settings.setEnableSmoothTransition(true);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+
+        // Registrar bridge JS
+        webView.addJavascriptInterface(new AchoBridge(), "AchoApp");
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -71,6 +154,7 @@ public class MainActivity extends Activity {
                 else handler.cancel();
             }
         });
+
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
@@ -132,8 +216,7 @@ public class MainActivity extends Activity {
             boolean needsRequest = false;
             for (String p : perms) {
                 if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
-                    needsRequest = true;
-                    break;
+                    needsRequest = true; break;
                 }
             }
             if (needsRequest) requestPermissions(perms, REQ_STORAGE);
@@ -150,7 +233,10 @@ public class MainActivity extends Activity {
         if (customView != null) {
             fullscreenContainer.removeView(customView);
             customView = null;
-            if (customViewCallback != null) { customViewCallback.onCustomViewHidden(); customViewCallback = null; }
+            if (customViewCallback != null) {
+                customViewCallback.onCustomViewHidden();
+                customViewCallback = null;
+            }
             webView.setVisibility(View.VISIBLE);
         } else if (webView != null && webView.canGoBack()) {
             webView.goBack();
