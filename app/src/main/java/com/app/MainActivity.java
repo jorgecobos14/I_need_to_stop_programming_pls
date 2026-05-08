@@ -30,8 +30,9 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private ValueCallback<Uri[]> filePathCallback;
-    private static final String HOME_URL = "https://san-league-beautifully-apps.trycloudflare.com";
-    private static final String ALLOWED_HOST = "san-league-beautifully-apps.trycloudflare.com";
+    private static final String CONFIG_URL = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
+    private String HOME_URL = null;
+    private String ALLOWED_HOST = null;
     private static final int REQ_STORAGE = 1002;
     private static final int REQ_FILE_CHOOSER = 1003;
     private static final int REQ_NOTIFICATION = 1004;
@@ -53,7 +54,27 @@ public class MainActivity extends Activity {
         requestStoragePermissions();
         requestNotificationPermission();
         setupWebView();
-        webView.loadUrl(HOME_URL);
+        new Thread(() -> {
+            try {
+                java.net.URL url = new java.net.URL(CONFIG_URL);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(conn.getInputStream())
+                );
+                String serverUrl = reader.readLine().trim();
+                reader.close();
+                HOME_URL = serverUrl;
+                ALLOWED_HOST = serverUrl.replace("https://", "").replace("http://", "");
+                runOnUiThread(() -> webView.loadUrl(HOME_URL));
+            } catch (Exception e) {
+                runOnUiThread(() -> webView.loadData(
+                    "<h2>No se pudo conectar al servidor.<br>Intenta de nuevo.</h2>",
+                    "text/html", "utf-8"
+                ));
+            }
+        }).start();
     }
 
     private void createNotificationChannel() {
@@ -77,7 +98,6 @@ public class MainActivity extends Activity {
     }
 
     public class AchoBridge {
-
         @JavascriptInterface
         public void showNotification(String title, String body) {
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
@@ -97,8 +117,7 @@ public class MainActivity extends Activity {
                    .setContentText(body)
                    .setAutoCancel(true)
                    .setContentIntent(pendingIntent);
-            NotificationManager manager = (NotificationManager)
-                getSystemService(NOTIFICATION_SERVICE);
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (manager != null) manager.notify(notificationId++, builder.build());
         }
 
@@ -132,9 +151,7 @@ public class MainActivity extends Activity {
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-
         webView.addJavascriptInterface(new AchoBridge(), "AchoApp");
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -143,11 +160,10 @@ public class MainActivity extends Activity {
             }
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                if (error.getUrl().contains(ALLOWED_HOST)) handler.proceed();
+                if (ALLOWED_HOST != null && error.getUrl().contains(ALLOWED_HOST)) handler.proceed();
                 else handler.cancel();
             }
         });
-
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
