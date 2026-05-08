@@ -41,6 +41,7 @@ public class MainActivity extends Activity {
     private static final int REQ_NOTIFICATION = 1004;
     private static final String CHANNEL_ID = "acho_notifications";
     private int notificationId = 1;
+    private boolean running = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +59,8 @@ public class MainActivity extends Activity {
         requestNotificationPermission();
         setupServiceWorker();
         setupWebView();
+
+        // Carga inicial
         new Thread(() -> {
             try {
                 java.net.URL url = new java.net.URL(CONFIG_URL);
@@ -79,6 +82,43 @@ public class MainActivity extends Activity {
                 ));
             }
         }).start();
+
+        // Temporizador de detección de cambio de URL
+        new Thread(() -> {
+            while (running) {
+                try {
+                    Thread.sleep(5000);
+                    java.net.URL url = new java.net.URL(CONFIG_URL);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+                    java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream())
+                    );
+                    String newUrl = reader.readLine().trim();
+                    reader.close();
+                    if (HOME_URL != null && !newUrl.equals(HOME_URL)) {
+                        HOME_URL = newUrl;
+                        ALLOWED_HOST = newUrl.replace("https://", "").replace("http://", "");
+                        runOnUiThread(() -> webView.loadUrl(HOME_URL));
+                    }
+                } catch (Exception e) {
+                    // ignorar errores temporales
+                }
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        running = false;
+        if (webView != null) {
+            webView.stopLoading();
+            webView.clearCache(false);
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
     }
 
     private void setupServiceWorker() {
@@ -274,15 +314,4 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
-
-    @Override
-    protected void onDestroy() {
-        if (webView != null) {
-            webView.stopLoading();
-            webView.clearCache(false);
-            webView.destroy();
-            webView = null;
-        }
-        super.onDestroy();
-    }
 }
