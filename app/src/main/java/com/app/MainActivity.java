@@ -15,10 +15,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.ServiceWorkerClient;
+import android.webkit.ServiceWorkerController;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -53,6 +56,7 @@ public class MainActivity extends Activity {
         createNotificationChannel();
         requestStoragePermissions();
         requestNotificationPermission();
+        setupServiceWorker();
         setupWebView();
         new Thread(() -> {
             try {
@@ -75,6 +79,17 @@ public class MainActivity extends Activity {
                 ));
             }
         }).start();
+    }
+
+    private void setupServiceWorker() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            ServiceWorkerController.getInstance().setServiceWorkerClient(new ServiceWorkerClient() {
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+                    return null;
+                }
+            });
+        }
     }
 
     private void createNotificationChannel() {
