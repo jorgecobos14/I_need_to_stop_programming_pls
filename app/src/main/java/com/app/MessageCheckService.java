@@ -46,7 +46,7 @@ public class MessageCheckService extends Service {
         SharedPreferences prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         while (running) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(10000);
                 String token = prefs.getString(KEY_TOKEN, null);
                 if (token == null) continue;
 
