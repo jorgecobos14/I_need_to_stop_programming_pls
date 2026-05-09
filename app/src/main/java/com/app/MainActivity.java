@@ -6,7 +6,9 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -33,13 +35,13 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private ValueCallback<Uri[]> filePathCallback;
-    private static final String CONFIG_URL = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
-    private String HOME_URL = null;
+    private static final String CONFIG_URL  = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
+    private String HOME_URL     = null;
     private String ALLOWED_HOST = null;
-    private static final int REQ_STORAGE = 1002;
+    private static final int REQ_STORAGE      = 1002;
     private static final int REQ_FILE_CHOOSER = 1003;
     private static final int REQ_NOTIFICATION = 1004;
-    private static final String CHANNEL_ID = "acho_notifications";
+    private static final String CHANNEL_ID    = "acho_notifications";
     private int notificationId = 1;
     private boolean running = true;
 
@@ -72,7 +74,7 @@ public class MainActivity extends Activity {
                 );
                 String serverUrl = reader.readLine().trim();
                 reader.close();
-                HOME_URL = serverUrl;
+                HOME_URL     = serverUrl;
                 ALLOWED_HOST = serverUrl.replace("https://", "").replace("http://", "");
                 runOnUiThread(() -> webView.loadUrl(HOME_URL));
             } catch (Exception e) {
@@ -98,7 +100,7 @@ public class MainActivity extends Activity {
                     String newUrl = reader.readLine().trim();
                     reader.close();
                     if (HOME_URL != null && !newUrl.equals(HOME_URL)) {
-                        HOME_URL = newUrl;
+                        HOME_URL     = newUrl;
                         ALLOWED_HOST = newUrl.replace("https://", "").replace("http://", "");
                         runOnUiThread(() -> webView.loadUrl(HOME_URL));
                     }
@@ -153,6 +155,20 @@ public class MainActivity extends Activity {
     }
 
     public class AchoBridge {
+
+        @JavascriptInterface
+        public void startBackgroundService(String token) {
+            SharedPreferences prefs = getSharedPreferences("acho_prefs", Context.MODE_PRIVATE);
+            prefs.edit().putString("auth_token", token).apply();
+            Intent intent = new Intent(MainActivity.this, MessageCheckService.class);
+            intent.putExtra("token", token);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+        }
+
         @JavascriptInterface
         public void showNotification(String title, String body) {
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
@@ -315,3 +331,4 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 }
+
