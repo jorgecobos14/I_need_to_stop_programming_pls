@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
                         runOnUiThread(() -> webView.loadUrl(HOME_URL));
                     }
                 } catch (Exception e) {
-                    // ignorar errores temporales
+
                 }
             }
         }).start();
