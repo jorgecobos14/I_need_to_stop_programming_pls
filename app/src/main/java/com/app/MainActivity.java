@@ -62,7 +62,6 @@ public class MainActivity extends Activity {
         setupServiceWorker();
         setupWebView();
 
-        // Carga inicial
         new Thread(() -> {
             try {
                 java.net.URL url = new java.net.URL(CONFIG_URL);
