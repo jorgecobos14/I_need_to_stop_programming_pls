@@ -53,7 +53,7 @@ public class CommunityWidget extends AppWidgetProvider {
                 JSONArray posts = new JSONArray(sb.toString());
 
                 // Determinar si es widget grande o pequeño
-                android.appwidget.AppWidgetInfo info = appWidgetManager.getAppWidgetInfo(widgetId);
+                android.appwidget.AppWidgetProviderInfo info = appWidgetManager.getAppWidgetInfo(widgetId);
                 boolean isSmall = info != null && info.minWidth < 250;
 
                 RemoteViews views;
