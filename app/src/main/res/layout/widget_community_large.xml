@@ -62,7 +62,7 @@
             android:id="@+id/avatar1"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:text="??"
+            android:text="--"
             android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="#e6edf3"
@@ -119,7 +119,7 @@
             android:id="@+id/avatar2"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:text="??"
+            android:text="--"
             android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="#e6edf3"
@@ -175,7 +175,7 @@
             android:id="@+id/avatar3"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:text="??"
+            android:text="--"
             android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="#e6edf3"
@@ -219,3 +219,4 @@
     </LinearLayout>
 
 </LinearLayout>
+
