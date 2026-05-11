@@ -84,7 +84,6 @@ public class MainActivity extends Activity {
             }
         }).start();
 
-        // Temporizador de detección de cambio de URL
         new Thread(() -> {
             while (running) {
                 try {
