@@ -83,7 +83,8 @@
                 android:textSize="9sp"
                 android:textStyle="bold"
                 android:textColor="#e6edf3"
-                android:singleLine="true"/>
+                android:maxLines="1"
+            android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/text1"
@@ -91,7 +92,8 @@
                 android:layout_height="wrap_content"
                 android:textSize="9sp"
                 android:textColor="#8b949e"
-                android:singleLine="true"/>
+                android:maxLines="1"
+            android:ellipsize="end"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -129,7 +131,8 @@
                 android:textSize="9sp"
                 android:textStyle="bold"
                 android:textColor="#e6edf3"
-                android:singleLine="true"/>
+                android:maxLines="1"
+            android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/text2"
@@ -137,7 +140,8 @@
                 android:layout_height="wrap_content"
                 android:textSize="9sp"
                 android:textColor="#8b949e"
-                android:singleLine="true"/>
+                android:maxLines="1"
+            android:ellipsize="end"/>
         </LinearLayout>
     </LinearLayout>
 
