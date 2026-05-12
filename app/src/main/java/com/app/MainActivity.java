@@ -45,6 +45,10 @@ public class MainActivity extends Activity {
     private int notificationId = 1;
     private boolean running = true;
 
+    // Contenido pendiente de compartir
+    private String pendingShareText = null;
+    private Uri pendingShareUri     = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +65,9 @@ public class MainActivity extends Activity {
         requestNotificationPermission();
         setupServiceWorker();
         setupWebView();
+
+        // Manejar intent de compartir al abrir
+        handleShareIntent(getIntent());
 
         new Thread(() -> {
             try {
@@ -102,11 +109,57 @@ public class MainActivity extends Activity {
                         ALLOWED_HOST = newUrl.replace("https://", "").replace("http://", "");
                         runOnUiThread(() -> webView.loadUrl(HOME_URL));
                     }
-                } catch (Exception e) {
-
-                }
+                } catch (Exception e) { }
             }
         }).start();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleShareIntent(intent);
+    }
+
+    private void handleShareIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        String type   = intent.getType();
+        if (!Intent.ACTION_SEND.equals(action) || type == null) return;
+
+        if (type.startsWith("text/")) {
+            String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (text != null) pendingShareText = text;
+        } else if (type.startsWith("image/") || type.startsWith("video/") ||
+                   type.startsWith("audio/") || type.equals("application/pdf") ||
+                   type.equals("text/plain")) {
+            Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (uri != null) pendingShareUri = uri;
+            String extraText = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (extraText != null) pendingShareText = extraText;
+        }
+    }
+
+    private void deliverPendingShare() {
+        if (pendingShareText != null) {
+            String escaped = pendingShareText
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "");
+            webView.evaluateJavascript(
+                "if(window.receiveSharedContent) window.receiveSharedContent('" + escaped + "', null);",
+                null
+            );
+            pendingShareText = null;
+        }
+        if (pendingShareUri != null) {
+            String uriStr = pendingShareUri.toString();
+            webView.evaluateJavascript(
+                "if(window.receiveSharedContent) window.receiveSharedContent(null, '" + uriStr + "');",
+                null
+            );
+            pendingShareUri = null;
+        }
     }
 
     @Override
@@ -206,6 +259,11 @@ public class MainActivity extends Activity {
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
             startActivity(Intent.createChooser(shareIntent, "Compartir via"));
         }
+
+        @JavascriptInterface
+        public void pageReady() {
+            runOnUiThread(() -> deliverPendingShare());
+        }
     }
 
     private void setupWebView() {
@@ -231,6 +289,11 @@ public class MainActivity extends Activity {
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
                 if (ALLOWED_HOST != null && error.getUrl().contains(ALLOWED_HOST)) handler.proceed();
                 else handler.cancel();
+            }
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                // Avisar a la app que la página cargó
+                view.evaluateJavascript("if(window.AchoApp) AchoApp.pageReady();", null);
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
