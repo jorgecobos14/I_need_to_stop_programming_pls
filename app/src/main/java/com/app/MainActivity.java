@@ -35,7 +35,6 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private ValueCallback<Uri[]> filePathCallback;
-    private static final String CONFIG_URL  = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
     private String HOME_URL     = null;
     private String ALLOWED_HOST = null;
     private static final int REQ_STORAGE      = 1002;
@@ -45,7 +44,6 @@ public class MainActivity extends Activity {
     private int notificationId = 1;
     private boolean running = true;
 
-    // Contenido pendiente de compartir
     private String pendingShareText = null;
     private Uri pendingShareUri     = null;
 
@@ -66,7 +64,6 @@ public class MainActivity extends Activity {
         setupServiceWorker();
         setupWebView();
 
-        // Manejar intent de compartir al abrir
         handleShareIntent(getIntent());
 
         new Thread(() -> {
@@ -81,7 +78,6 @@ public class MainActivity extends Activity {
                 String serverUrl = reader.readLine().trim();
                 reader.close();
                 HOME_URL     = serverUrl;
-                ALLOWED_HOST = serverUrl.replace("https://", "").replace("http://", "");
                 runOnUiThread(() -> webView.loadUrl(HOME_URL));
             } catch (Exception e) {
                 runOnUiThread(() -> webView.loadData(
@@ -106,7 +102,6 @@ public class MainActivity extends Activity {
                     reader.close();
                     if (HOME_URL != null && !newUrl.equals(HOME_URL)) {
                         HOME_URL     = newUrl;
-                        ALLOWED_HOST = newUrl.replace("https://", "").replace("http://", "");
                         runOnUiThread(() -> webView.loadUrl(HOME_URL));
                     }
                 } catch (Exception e) { }
@@ -292,7 +287,6 @@ public class MainActivity extends Activity {
             }
             @Override
             public void onPageFinished(WebView view, String url) {
-                // Avisar a la app que la página cargó
                 view.evaluateJavascript("if(window.AchoApp) AchoApp.pageReady();", null);
             }
         });

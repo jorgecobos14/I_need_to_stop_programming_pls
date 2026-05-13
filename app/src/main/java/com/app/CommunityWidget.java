@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.RemoteViews;
@@ -32,11 +31,9 @@ public class CommunityWidget extends AppWidgetProvider {
     private void updateWidget(Context context, AppWidgetManager appWidgetManager, int widgetId) {
         new Thread(() -> {
             try {
-                // Obtener URL del servidor
                 String serverUrl = fetchLine(CONFIG_URL);
                 if (serverUrl == null) return;
 
-                // Obtener posts recientes
                 URL url = new URL(serverUrl + "/api/community/posts");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(8000);
@@ -52,18 +49,11 @@ public class CommunityWidget extends AppWidgetProvider {
 
                 JSONArray posts = new JSONArray(sb.toString());
 
-                // Determinar si es widget grande o pequeño
                 android.appwidget.AppWidgetProviderInfo info = appWidgetManager.getAppWidgetInfo(widgetId);
                 boolean isSmall = info != null && info.minWidth < 250;
 
-                RemoteViews views;
-                if (isSmall) {
-                    views = buildSmallWidget(context, posts);
-                } else {
-                    views = buildLargeWidget(context, posts);
-                }
+                RemoteViews views = isSmall ? buildSmallWidget(context, posts) : buildLargeWidget(context, posts);
 
-                // Intent para abrir la app al tocar el widget
                 Intent intent = new Intent(context, MainActivity.class);
                 PendingIntent pi = PendingIntent.getActivity(context, 0, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -72,9 +62,7 @@ public class CommunityWidget extends AppWidgetProvider {
                 new Handler(Looper.getMainLooper()).post(() ->
                         appWidgetManager.updateAppWidget(widgetId, views));
 
-            } catch (Exception e) {
-                // ignorar errores
-            }
+            } catch (Exception e) { }
         }).start();
     }
 
@@ -83,28 +71,19 @@ public class CommunityWidget extends AppWidgetProvider {
 
         for (int i = 0; i < Math.min(posts.length(), 3); i++) {
             JSONObject post = posts.getJSONObject(i);
-            String author = post.optString("author", "");
-            String text   = post.optString("text", "");
-            String time   = post.optString("created_at", "").replace("T", " ").substring(0, Math.min(16, post.optString("created_at","").length()));
+            String author   = post.optString("author", "");
+            String text     = post.optString("text", "");
+            String time     = post.optString("created_at", "").replace("T", " ");
+            if (time.length() > 16) time = time.substring(0, 16);
             String initials = getInitials(author);
-
-            if (text.isEmpty()) text = "📎 Archivo adjunto";
+            if (text.isEmpty()) text = "Archivo adjunto";
             if (text.length() > 40) text = text.substring(0, 40) + "...";
 
             int avatarId, authorId, textId, timeId;
             switch (i) {
-                case 0:
-                    avatarId = R.id.avatar1; authorId = R.id.author1;
-                    textId = R.id.text1; timeId = R.id.time1;
-                    break;
-                case 1:
-                    avatarId = R.id.avatar2; authorId = R.id.author2;
-                    textId = R.id.text2; timeId = R.id.time2;
-                    break;
-                default:
-                    avatarId = R.id.avatar3; authorId = R.id.author3;
-                    textId = R.id.text3; timeId = R.id.time3;
-                    break;
+                case 0:  avatarId = R.id.avatar1; authorId = R.id.author1; textId = R.id.text1; timeId = R.id.time1; break;
+                case 1:  avatarId = R.id.avatar2; authorId = R.id.author2; textId = R.id.text2; timeId = R.id.time2; break;
+                default: avatarId = R.id.avatar3; authorId = R.id.author3; textId = R.id.text3; timeId = R.id.time3; break;
             }
 
             views.setTextViewText(avatarId, initials);
@@ -122,19 +101,15 @@ public class CommunityWidget extends AppWidgetProvider {
 
         for (int i = 0; i < Math.min(posts.length(), 2); i++) {
             JSONObject post = posts.getJSONObject(i);
-            String author = post.optString("author", "");
-            String text   = post.optString("text", "");
+            String author   = post.optString("author", "");
+            String text     = post.optString("text", "");
             String initials = getInitials(author);
-
-            if (text.isEmpty()) text = "📎 Archivo";
+            if (text.isEmpty()) text = "Archivo";
             if (text.length() > 25) text = text.substring(0, 25) + "...";
 
-            int avatarId, authorId, textId;
-            if (i == 0) {
-                avatarId = R.id.avatar1; authorId = R.id.author1; textId = R.id.text1;
-            } else {
-                avatarId = R.id.avatar2; authorId = R.id.author2; textId = R.id.text2;
-            }
+            int avatarId = i == 0 ? R.id.avatar1 : R.id.avatar2;
+            int authorId = i == 0 ? R.id.author1 : R.id.author2;
+            int textId   = i == 0 ? R.id.text1   : R.id.text2;
 
             views.setTextViewText(avatarId, initials);
             views.setTextViewText(authorId, author);
@@ -147,10 +122,9 @@ public class CommunityWidget extends AppWidgetProvider {
 
     private String getInitials(String name) {
         if (name == null || name.isEmpty()) return "?";
-        String[] parts = name.trim().split("[_\\-. ]+");
-        if (parts.length >= 2) {
+        String[] parts = name.trim().split("[_\-. ]+");
+        if (parts.length >= 2)
             return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-        }
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
     }
 

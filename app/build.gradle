@@ -33,7 +33,6 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 
-    // 👇 IMPORTANTE: desactivar splits
     splits {
         abi {
             enable false
@@ -48,5 +47,4 @@ android {
 }
 
 dependencies {
-    // vacío porque tu app es básicamente un WebView glorificado
 }
