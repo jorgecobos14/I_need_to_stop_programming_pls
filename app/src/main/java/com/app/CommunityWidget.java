@@ -122,7 +122,7 @@ public class CommunityWidget extends AppWidgetProvider {
 
     private String getInitials(String name) {
         if (name == null || name.isEmpty()) return "?";
-        String[] parts = name.trim().split("[_\-. ]+");
+        String[] parts = name.trim().split("[_\\-. ]+");
         if (parts.length >= 2)
             return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
