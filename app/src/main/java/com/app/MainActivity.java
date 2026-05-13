@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private ValueCallback<Uri[]> filePathCallback;
+    private static final String CONFIG_URL  = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
     private String HOME_URL     = null;
     private String ALLOWED_HOST = null;
     private static final int REQ_STORAGE      = 1002;
