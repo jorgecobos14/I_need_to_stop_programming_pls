@@ -87,7 +87,6 @@ public class MessageCheckService extends Service {
                 }
 
             } catch (Exception e) {
-                // ignorar errores temporales
             }
         }
     }
