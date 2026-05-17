@@ -1,55 +1,85 @@
 # Acho Chat App
 
-Acho Chat App is an open-source Android client that provides access to the Acho chat platform through a lightweight WebView-based interface.
+A native Android client for Acho, a self-hosted social network and chat platform.
 
 ## Overview
 
-This application is a minimal Android client designed to offer a direct and efficient way to access the Acho chat web platform.
+Acho Chat App provides Android access to the Acho platform. The application connects to the server dynamically by retrieving its URL from a remote configuration database, allowing server changes to propagate to all clients without requiring an application update.
 
-It prioritizes simplicity, performance, and transparency, avoiding unnecessary features or background processing.
+## Features
 
-## Core functionality
+### Core
+- Renders the Acho platform via WebView with JavaScript and DOM Storage enabled
+- **Dynamic server URL**: the server address is retrieved from a remote configuration database and automatically refreshed every 5 seconds in the event of a change. If an error occurs upon opening the application, we recommend closing it completely and waiting approximately 2 minutes before trying again. If the issue persists, please contact technical support at +526601670314
+- In-app back navigation with full WebView history support and fullscreen mode
+- Hardware-accelerated rendering for improved performance
 
-- Loads the Acho chat platform using Android WebView
-- Provides in-app back navigation
-- Enables JavaScript and DOM storage for web compatibility
-- Uses a lightweight native Android interface
-- Supports sharing photos, videos, and files with the community and chat
+### Native Notifications
+- **In-app notifications**: the server may invoke `AchoApp.showNotification(title, body)` via the JavaScript bridge to display native Android notifications
+- **Background service** (`MessageCheckService`): a foreground service that remains active even when the application is closed, polling the server every 30 seconds using the session token to detect and notify new messages
+- Dedicated notification channels: standard (`acho_notifications`) and low-priority background (`acho_bg`)
+- Automatic `POST_NOTIFICATIONS` permission prompt on Android 13 and above
 
-## Privacy
+### Home Screen Widget
 
-This application does not collect, store, or transmit personal data on its own.
+> **Battery advisory:** The widget periodically fetches data from the server in order to stay up to date, which introduces a recurring background network operation. On devices with ample battery capacity, the impact is negligible. On devices with limited battery capacity, we recommend refraining from placing the widget on the home screen. Users are free to do so regardless — this notice is purely informational.
 
-All chat content, network requests, and account interactions occur directly through the remote Acho web service loaded inside the WebView.
+- Fully resizable widget, adjustable from a compact tile up to the size of a full application on the home screen
+- Displays the most recent community posts, including author initials, message preview, timestamp, and a new posts counter badge
+- Tapping the widget opens the application directly
+
+### Share Sheet Integration
+- The application is capable of **receiving shared content** from third-party apps, including text, images, video, audio, and PDF files
+- Shared content is forwarded to the WebView via `window.receiveSharedContent(text, uri)` once the page has finished loading
+- The server may invoke `AchoApp.shareContent(text)` or `AchoApp.shareUrl(url, title)` to trigger the native Android share sheet
+
+### File Picker
+- Full file upload support from within the WebView, including images, videos, audio, and documents
 
 ## Permissions
 
-- `INTERNET` — required to load the web platform
-- `READ_EXTERNAL_STORAGE` — allows the user to select files from their device to share in the community or chat (Android 7.1.2 - 12)
-- `WRITE_EXTERNAL_STORAGE` — allows saving files downloaded from the platform (Android 7.1.2 - 9)
-- `READ_MEDIA_IMAGES` — allows selecting images from the device to share (Android 13+)
-- `READ_MEDIA_VIDEO` — allows selecting videos from the device to share (Android 13+)
-- `READ_MEDIA_AUDIO` — allows selecting audio files from the device to share (Android 13+)
+| Permission | Purpose |
+|---|---|
+| `INTERNET` | Connect to the Acho server |
+| `POST_NOTIFICATIONS` | Display message notifications |
+| `READ_MEDIA_IMAGES` | Upload images (Android 13+) |
+| `READ_MEDIA_VIDEO` | Upload videos (Android 13+) |
+| `READ_MEDIA_AUDIO` | Upload audio (Android 13+) |
+| `READ_EXTERNAL_STORAGE` | Upload files (Android 12 and below) |
+| `FOREGROUND_SERVICE` | Maintain the background notification service |
+| `FOREGROUND_SERVICE_DATA_SYNC` | Foreground service classification |
 
-Uploaded files are managed by the platform administrator. Any file may be removed if it violates the usage policies, provided the administrator gives a justification and the content creator confirms the removal.
+## JavaScript Bridge (`AchoApp`)
 
-## Technical details
+The server may interact with native Android functionality via the `AchoApp` object injected into the WebView:
 
-- Native Android application
-- Written in Java
-- Uses Android WebView
-- Built with Android Gradle tooling
-- Designed to be simple, transparent, and easy to maintain
+```javascript
+// Initialize the background notification service
+AchoApp.startBackgroundService(authToken);
 
-## Build
+// Display a native notification
+AchoApp.showNotification("New message", "Hey!");
 
-The project can be built with standard Android development tools or through a continuous integration system such as GitHub Actions.
+// Open the native share sheet with text
+AchoApp.shareContent("Check this out");
 
-## Source code
+// Open the native share sheet with a URL and title
+AchoApp.shareUrl("https://example.com", "Title");
+```
 
-This repository contains the full source code for the application.
+## Technical Details
+
+- **Language**: Java
+- **Minimum SDK**: Android 7.1 (API 25)
+- **Target SDK**: Android 15 (API 35)
+- **Universal APK**: a single release APK supporting both 32-bit and 64-bit architectures
+- Signed release builds produced via GitHub Actions CI
+
+## Privacy
+
+The application does not collect or transmit user data independently. All network activity is directed exclusively to the Acho server. The session token is stored locally in `SharedPreferences` solely for the purpose of the background notification service.
 
 ## License
 
-See the `LICENSE` file for licensing information.
+MIT — see `LICENSE` file.
 
