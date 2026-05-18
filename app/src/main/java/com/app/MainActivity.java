@@ -35,18 +35,17 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private ValueCallback<Uri[]> filePathCallback;
-    private static final String CONFIG_URL  = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
-    private String HOME_URL     = null;
+    private static final String CONFIG_URL = "https://raw.githubusercontent.com/jorgecobos14/acho-config/main/url.txt";
+    private String HOME_URL = null;
     private String ALLOWED_HOST = null;
-    private static final int REQ_STORAGE      = 1002;
+    private static final int REQ_STORAGE = 1002;
     private static final int REQ_FILE_CHOOSER = 1003;
     private static final int REQ_NOTIFICATION = 1004;
-    private static final String CHANNEL_ID    = "acho_notifications";
+    private static final String CHANNEL_ID = "acho_notifications";
     private int notificationId = 1;
     private boolean running = true;
-
     private String pendingShareText = null;
-    private Uri pendingShareUri     = null;
+    private Uri pendingShareUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,9 +63,7 @@ public class MainActivity extends Activity {
         requestNotificationPermission();
         setupServiceWorker();
         setupWebView();
-
         handleShareIntent(getIntent());
-
         new Thread(() -> {
             try {
                 java.net.URL url = new java.net.URL(CONFIG_URL);
@@ -74,35 +71,36 @@ public class MainActivity extends Activity {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getInputStream())
+                        new java.io.InputStreamReader(conn.getInputStream())
                 );
                 String serverUrl = reader.readLine().trim();
                 reader.close();
-                HOME_URL     = serverUrl;
+                HOME_URL = serverUrl;
+                ALLOWED_HOST = new java.net.URL(serverUrl).getHost();
                 runOnUiThread(() -> webView.loadUrl(HOME_URL));
             } catch (Exception e) {
                 runOnUiThread(() -> webView.loadData(
-                    "<h2>No se pudo conectar al servidor.<br>Intenta de nuevo.</h2>",
-                    "text/html", "utf-8"
+                        "<h2>No se pudo conectar al servidor.<br>Intenta de nuevo.</h2>",
+                        "text/html", "utf-8"
                 ));
             }
         }).start();
-
         new Thread(() -> {
             while (running) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(30000);
                     java.net.URL url = new java.net.URL(CONFIG_URL);
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
                     java.io.BufferedReader reader = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream())
+                            new java.io.InputStreamReader(conn.getInputStream())
                     );
                     String newUrl = reader.readLine().trim();
                     reader.close();
                     if (HOME_URL != null && !newUrl.equals(HOME_URL)) {
-                        HOME_URL     = newUrl;
+                        HOME_URL = newUrl;
+                        ALLOWED_HOST = new java.net.URL(newUrl).getHost();
                         runOnUiThread(() -> webView.loadUrl(HOME_URL));
                     }
                 } catch (Exception e) { }
@@ -119,15 +117,13 @@ public class MainActivity extends Activity {
     private void handleShareIntent(Intent intent) {
         if (intent == null) return;
         String action = intent.getAction();
-        String type   = intent.getType();
+        String type = intent.getType();
         if (!Intent.ACTION_SEND.equals(action) || type == null) return;
-
         if (type.startsWith("text/")) {
             String text = intent.getStringExtra(Intent.EXTRA_TEXT);
             if (text != null) pendingShareText = text;
         } else if (type.startsWith("image/") || type.startsWith("video/") ||
-                   type.startsWith("audio/") || type.equals("application/pdf") ||
-                   type.equals("text/plain")) {
+                type.startsWith("audio/") || type.equals("application/pdf")) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null) pendingShareUri = uri;
             String extraText = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -138,21 +134,21 @@ public class MainActivity extends Activity {
     private void deliverPendingShare() {
         if (pendingShareText != null) {
             String escaped = pendingShareText
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\n", "\\n")
-                .replace("\r", "");
+                    .replace("\\", "\\\\")
+                    .replace("'", "\\'")
+                    .replace("\n", "\\n")
+                    .replace("\r", "");
             webView.evaluateJavascript(
-                "if(window.receiveSharedContent) window.receiveSharedContent('" + escaped + "', null);",
-                null
+                    "if(window.receiveSharedContent) window.receiveSharedContent('" + escaped + "', null);",
+                    null
             );
             pendingShareText = null;
         }
         if (pendingShareUri != null) {
             String uriStr = pendingShareUri.toString();
             webView.evaluateJavascript(
-                "if(window.receiveSharedContent) window.receiveSharedContent(null, '" + uriStr + "');",
-                null
+                    "if(window.receiveSharedContent) window.receiveSharedContent(null, '" + uriStr + "');",
+                    null
             );
             pendingShareUri = null;
         }
@@ -184,7 +180,7 @@ public class MainActivity extends Activity {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Acho", NotificationManager.IMPORTANCE_DEFAULT
+                    CHANNEL_ID, "Acho", NotificationManager.IMPORTANCE_DEFAULT
             );
             channel.setDescription("Notificaciones de Acho Chat");
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -202,7 +198,6 @@ public class MainActivity extends Activity {
     }
 
     public class AchoBridge {
-
         @JavascriptInterface
         public void startBackgroundService(String token) {
             SharedPreferences prefs = getSharedPreferences("acho_prefs", Context.MODE_PRIVATE);
@@ -221,8 +216,8 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(
-                MainActivity.this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    MainActivity.this, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
             Notification.Builder builder;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -231,10 +226,10 @@ public class MainActivity extends Activity {
                 builder = new Notification.Builder(MainActivity.this);
             }
             builder.setSmallIcon(android.R.drawable.ic_dialog_info)
-                   .setContentTitle(title)
-                   .setContentText(body)
-                   .setAutoCancel(true)
-                   .setContentIntent(pendingIntent);
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
             NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (manager != null) manager.notify(notificationId++, builder.build());
         }
@@ -279,7 +274,7 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String host = request.getUrl().getHost();
-                return host == null || !host.equals(ALLOWED_HOST);
+                return host == null || ALLOWED_HOST == null || !host.equals(ALLOWED_HOST);
             }
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -345,14 +340,15 @@ public class MainActivity extends Activity {
     private void requestStoragePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             String[] perms = {
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_AUDIO
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_MEDIA_AUDIO
             };
             boolean needsRequest = false;
             for (String p : perms) {
                 if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
-                    needsRequest = true; break;
+                    needsRequest = true;
+                    break;
                 }
             }
             if (needsRequest) requestPermissions(perms, REQ_STORAGE);
