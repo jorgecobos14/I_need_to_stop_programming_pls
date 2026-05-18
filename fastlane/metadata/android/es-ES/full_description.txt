@@ -1,0 +1,1 @@
+Acho Chat es un cliente nativo para Acho, una red social auto-hospedada. Incluye servicio de notificaciones en segundo plano, widget de pantalla de inicio y renderizado acelerado por hardware. Compatible con API 25 hasta API 36, arquitecturas de 32 y 64 bits.
