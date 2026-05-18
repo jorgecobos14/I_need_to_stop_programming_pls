@@ -143,4 +143,3 @@ public class CommunityWidget extends AppWidgetProvider {
         }
     }
 }
-

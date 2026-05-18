@@ -387,4 +387,3 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 }
-

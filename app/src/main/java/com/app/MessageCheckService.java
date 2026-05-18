@@ -59,7 +59,7 @@ public class MessageCheckService extends Service {
                 conn.setConnectTimeout(10000);
                 conn.setReadTimeout(10000);
 
-                if (conn.getResponseCode() != 200) continue;
+                 if (conn.getResponseCode() != 200) continue;
 
                 BufferedReader reader = new BufferedReader(
                     new InputStreamReader(conn.getInputStream())
@@ -166,4 +166,3 @@ public class MessageCheckService extends Service {
     @Override
     public IBinder onBind(Intent intent) { return null; }
 }
-
