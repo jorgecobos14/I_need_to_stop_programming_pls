@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "a"
+rootProject.name = "acho-chat"
 include(":app")
