@@ -1,0 +1,1 @@
+Acho Chat is a lightweight Android client that provides access to the Acho social network.
