@@ -44,9 +44,6 @@ jobs:
         run: |
           ./gradlew assembleRelease \
             --no-daemon \
-            --parallel \
-            --build-cache \
-            --configuration-cache \
             -Pandroid.injected.signing.store.file=$(pwd)/keystore.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.KEY_STORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.ALIAS }} \
@@ -57,4 +54,4 @@ jobs:
         with:
           name: app-apk
           path: app/build/outputs/apk/release/*.apk
-          compression-level: 0
+          compression-level: 9
