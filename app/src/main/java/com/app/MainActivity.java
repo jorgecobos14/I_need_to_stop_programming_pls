@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             while (running) {
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(5000);
                     java.net.URL url = new java.net.URL(CONFIG_URL);
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(5000);
