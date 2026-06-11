@@ -1,6 +1,8 @@
 package com.acho.chat.app;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -10,10 +12,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -27,7 +32,10 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -47,6 +55,10 @@ public class MainActivity extends Activity {
     private String pendingShareText = null;
     private Uri pendingShareUri = null;
 
+    // Splash y error
+    private View splashView;
+    private LinearLayout errorView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,6 +69,21 @@ public class MainActivity extends Activity {
         ));
         webView = new WebView(this);
         fullscreenContainer.addView(webView);
+
+        // Splash negro
+        splashView = new View(this);
+        splashView.setBackgroundColor(Color.BLACK);
+        splashView.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        fullscreenContainer.addView(splashView);
+
+        // Pantalla de error
+        errorView = buildErrorView();
+        errorView.setVisibility(View.GONE);
+        fullscreenContainer.addView(errorView);
+
         setContentView(fullscreenContainer);
         createNotificationChannel();
         requestStoragePermissions();
@@ -64,6 +91,67 @@ public class MainActivity extends Activity {
         setupServiceWorker();
         setupWebView();
         handleShareIntent(getIntent());
+        loadConfig();
+        startConfigPoller();
+    }
+
+    private LinearLayout buildErrorView() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setGravity(Gravity.CENTER);
+        layout.setBackgroundColor(Color.BLACK);
+        layout.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        TextView msg = new TextView(this);
+        msg.setText("Intente más tarde por favor.");
+        msg.setTextColor(Color.WHITE);
+        msg.setTextSize(18f);
+        msg.setTypeface(null, Typeface.BOLD);
+        msg.setGravity(Gravity.CENTER);
+        msg.setPadding(48, 0, 48, 48);
+        layout.addView(msg);
+
+        Button btn = new Button(this);
+        btn.setText("Reintentar");
+        btn.setTextColor(Color.BLACK);
+        btn.setBackgroundColor(Color.WHITE);
+        btn.setPadding(64, 24, 64, 24);
+        btn.setOnClickListener(v -> {
+            errorView.setVisibility(View.GONE);
+            splashView.setAlpha(1f);
+            splashView.setVisibility(View.VISIBLE);
+            loadConfig();
+        });
+        layout.addView(btn);
+
+        return layout;
+    }
+
+    private void showError() {
+        runOnUiThread(() -> {
+            splashView.setVisibility(View.GONE);
+            errorView.setVisibility(View.VISIBLE);
+        });
+    }
+
+    private void hideSplashWithFade() {
+        runOnUiThread(() -> {
+            splashView.animate()
+                    .alpha(0f)
+                    .setDuration(400)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            splashView.setVisibility(View.GONE);
+                        }
+                    });
+        });
+    }
+
+    private void loadConfig() {
         new Thread(() -> {
             try {
                 java.net.URL url = new java.net.URL(CONFIG_URL);
@@ -79,16 +167,16 @@ public class MainActivity extends Activity {
                 ALLOWED_HOST = new java.net.URL(serverUrl).getHost();
                 runOnUiThread(() -> webView.loadUrl(HOME_URL));
             } catch (Exception e) {
-                runOnUiThread(() -> webView.loadData(
-                        "<h2>No se pudo conectar al servidor.<br>Intenta de nuevo.</h2>",
-                        "text/html", "utf-8"
-                ));
+                showError();
             }
         }).start();
+    }
+
+    private void startConfigPoller() {
         new Thread(() -> {
             while (running) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(60000);
                     java.net.URL url = new java.net.URL(CONFIG_URL);
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(5000);
@@ -282,7 +370,14 @@ public class MainActivity extends Activity {
                 else handler.cancel();
             }
             @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                splashView.animate().cancel();
+                splashView.setAlpha(1f);
+                splashView.setVisibility(View.VISIBLE);
+            }
+            @Override
             public void onPageFinished(WebView view, String url) {
+                hideSplashWithFade();
                 view.evaluateJavascript("if(window.AchoApp) AchoApp.pageReady();", null);
             }
         });
@@ -383,3 +478,4 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 }
+
