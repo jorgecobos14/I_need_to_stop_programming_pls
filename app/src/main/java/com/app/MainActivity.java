@@ -55,7 +55,6 @@ public class MainActivity extends Activity {
     private String pendingShareText = null;
     private Uri pendingShareUri = null;
 
-    // Splash y error
     private View splashView;
     private LinearLayout errorView;
 
@@ -70,7 +69,6 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         fullscreenContainer.addView(webView);
 
-        // Splash negro
         splashView = new View(this);
         splashView.setBackgroundColor(Color.BLACK);
         splashView.setLayoutParams(new FrameLayout.LayoutParams(
@@ -79,7 +77,6 @@ public class MainActivity extends Activity {
         ));
         fullscreenContainer.addView(splashView);
 
-        // Pantalla de error
         errorView = buildErrorView();
         errorView.setVisibility(View.GONE);
         fullscreenContainer.addView(errorView);
