@@ -10,7 +10,7 @@ Acho Chat App provides Android access to the Acho platform. The application conn
 
 ### Core
 - Renders the Acho platform via WebView with JavaScript and DOM Storage enabled
-- **Dynamic server URL**: the server address is retrieved from a remote configuration database and automatically refreshed every 5 seconds in the event of a change. If an error occurs upon opening the application, we recommend closing it completely and waiting approximately 2 minutes before trying again. If the issue persists, please contact technical support at +526601670314
+- **Dynamic server URL**: the server address is retrieved from a remote configuration database and automatically refreshed every 5 seconds in the event of a change. If an error occurs upon opening the application, we recommend closing it completely and waiting approximately 2 minutes before trying again. If the issue persists, please contact technical support at +57 323 6288960
 - In-app back navigation with full WebView history support and fullscreen mode
 - Hardware-accelerated rendering for improved performance
 
